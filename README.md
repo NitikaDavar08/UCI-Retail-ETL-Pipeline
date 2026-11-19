@@ -33,7 +33,7 @@ Stage 5: Rigorous Validation & Quality Assurance
 ●	Engineering focus: Guaranteeing 100% data integrity before target loading.
 
 Stage 6: Aggregation & Export
-●	What we did: Computed high-level business intelligence metrics, including total corporate revenue (\approx \$10.64\text{ million}) and country-wise/monthly revenue breakdowns (identifying top-performing markets like the UK and Netherlands). Finally, we exported the validated dataset into clean CSV artifacts ready for data warehouse ingestion (e.g., Oracle Database).
+●	What we did: Computed high-level business intelligence metrics, including total corporate revenue (\approx \$10.64\text{ million}) and country-wise/monthly revenue breakdowns (identifying top-performing markets like the UK and Netherlands). Finally, we exported the validated dataset into clean CSV artifacts ready for data warehouse ingestion (e.g., Microsoft SQL Database).
 ●	Engineering focus: Delivering actionable insights alongside clean data assets.
 
 ---------Reflections & Engineering Insights---------
