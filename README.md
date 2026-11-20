@@ -1,44 +1,64 @@
-Semester 1---Project 1
+# UCI Online Retail: Multi-Engine ETL Pipeline
 
-# UCI-Retail-ETL-Pipeline
-End-to-end Retail ETL Pipeline using PySpark , Pandas  and Microsoft SQL Server and Engine. UCI Online Retail dataset is a transaction dataset hosted in the UCI Machine Learning Repository that records orders for a UK-based online store selling unique all-occasion gifts, including many wholesale buyers.
+End-to-end ETL pipeline that processes 541,909 transactions from the UCI Online Retail dataset using **Pandas** and **PySpark**, and loads the cleaned data into **Microsoft SQL Server**.
 
-----------Scalable Multi-Engine ETL Pipeline: UCI Online Retail Dataset----------
-An enterprise-grade, dual-implementation Extract, Transform, Load (ETL) pipeline built to process over 541,000+ transactional records from the UCI Online Retail repository. This project explores data engineering best practices using both single-node memory processing (Pandas) and distributed big data computing (PySpark), ensuring robust data hygiene, anomaly isolation, and accurate revenue attribution
+**Dataset:** [UCI Online Retail](https://archive.ics.uci.edu/dataset/352/online+retail), transactions of a UK-based online gift store (many wholesale customers).
 
------------Project Architecture & Stages----------
-The pipeline follows a rigorous, multi-stage engineering lifecycle designed to handle messy real-world data without sacrificing critical business context.
+## Tech Stack
 
-Stage 1: Ingestion & Environment Setup
-●	What we did: Configured cloud execution environments (Google Colab) to ingest raw CSV data streams. We established secure file-handling mechanisms, validated directory structures using operating system libraries (os), and initialized distributed compute clusters (SparkSession with local multi-core scaling).
-●	Engineering focus: Ensuring seamless ingestion and schema enforcement (inferSchema=True) to map types correctly from the start.
+| Layer | Tools |
+|---|---|
+| Processing | Python, Pandas, PySpark |
+| Storage | Microsoft SQL Server |
+| Environment | Google Colab, Git LFS |
 
-Stage 2: Exploratory Data Analysis (EDA) & Profiling
-●	What we did: Performed structural audits on all 541,909 records across 8 core attributes. We analyzed memory footprints, generated statistical distributions (quantiles, means, and standard deviations for Quantity and UnitPrice), and mapped out null-value distributions across columns like CustomerID and Description.
-●	Engineering focus: Profiling dataset boundaries to anticipate anomalies before executing transformations.
+## Architecture
 
-Stage 3: Anomaly Detection & Safe Isolation
-●	What we did: Instead of executing destructive deletions, we intelligently isolated edge cases into distinct data subsets:
-○	Cancellations: Filtered out 9,288 invoice records prefixed with "C".
-○	Returns: Isolated 10,624 transactions carrying negative quantities.
-○	Pricing Anomalies: Extracted 2,517 records with zero or negative unit prices.
-●	Engineering focus: Preserving downstream business value (e.g., studying customer return behaviors rather than deleting them).
+## Repository Structure
 
-Stage 4: Cleaning & Data Transformation
-●	What we did: Built clean working references (df_clean / df_sales) by removing 5,268 exact duplicate rows. We cast string-based invoice dates into proper timestamp objects (datetime64[ns] / to_timestamp) and engineered a high-precision revenue metric (TotalSales = Quantity \times UnitPrice).
-●	Engineering focus: Ensuring data immutability and maintaining clean state lineages throughout transformation graphs
+## Pipeline Stages
 
-Stage 5: Rigorous Validation & Quality Assurance
-●	What we did: Implemented defensive assertion checks post-transformation. We verified that negative quantities, invalid prices, and duplicate rows were completely eradicated from the active sales stream while handling missing CustomerID attributes gracefully (retaining transactions for aggregate sales reporting while dropping records missing essential transactional keys like InvoiceNo or StockCode).
-●	Engineering focus: Guaranteeing 100% data integrity before target loading.
+1. **Ingestion:** Load raw CSV, initialize a local Spark session, enforce schema.
+2. **EDA and profiling:** Audit all 541,909 records across 8 columns, check distributions of `Quantity` and `UnitPrice`, map nulls (`CustomerID`, `Description`).
+3. **Anomaly isolation:** Edge cases are separated, not deleted, so they can be analyzed later.
+   - Cancellations (invoice starts with "C"): 9,288 rows
+   - Returns (negative quantity): 10,624 rows
+   - Pricing anomalies (zero or negative `UnitPrice`): 2,517 rows
+4. **Cleaning and transformation:** Remove 5,268 exact duplicates, cast `InvoiceDate` to timestamp, create `TotalSales = Quantity x UnitPrice`.
+5. **Validation:** Assertions confirm no negative quantities, invalid prices or duplicates remain in the sales stream. Missing `CustomerID` is kept for aggregate sales; rows missing `InvoiceNo` or `StockCode` are dropped.
+6. **Aggregation and export:** Total revenue is about 10.64 million, with country-wise and monthly breakdowns (top markets: UK and Netherlands). Output is exported to CSV and loaded into SQL Server.
 
-Stage 6: Aggregation & Export
-●	What we did: Computed high-level business intelligence metrics, including total corporate revenue (\approx \$10.64\text{ million}) and country-wise/monthly revenue breakdowns (identifying top-performing markets like the UK and Netherlands). Finally, we exported the validated dataset into clean CSV artifacts ready for data warehouse ingestion (e.g., Microsoft SQL Database).
-●	Engineering focus: Delivering actionable insights alongside clean data assets.
+## Why Two Engines?
 
----------Reflections & Engineering Insights---------
-●	One thing I learnt: The critical difference between destructive cleaning and strategic isolation. Automatically dropping negative quantities or cancellations destroys valuable signals regarding product returns and customer friction. True engineering preserves these anomalies in separate partitions.
+Pandas is eager and in-memory, PySpark is lazy and distributed. Both notebooks apply the same logic, and the two cleaned outputs are **identical** (same file hash), which verifies the transformation logic across engines.
 
-●	One thing I improved: My ability to manage state and logic across two completely different computational paradigms—shifting from Pandas' eager, in-memory execution model to PySpark's lazy evaluation and immutable DataFrame transformations.
+## Data Model
 
-●	One question it gave to me: When scaling this pipeline to handle real-time, streaming transaction data (millions of events per second), how can we optimize watermark thresholds and windowed aggregations in Spark Structured Streaming to handle late-arriving returns without delaying critical daily revenue dashboards?
+![Database model](Working%20Database%20Model%20of%20pipeline.png)
+
+## How to Run
+
+1. Download `Online Retail.xlsx` from the UCI link above and place it in `data/` (see `data/README.md`).
+2. Open a notebook from `Notebooks/` in Google Colab or Jupyter.
+3. Run all cells. The cleaned CSV is written as output.
+4. Run `SQL/Schema_only.sql` in SQL Server to create the database, then load the cleaned CSV.
+
+Note: the cleaned CSVs are stored with Git LFS. Run `git lfs install` before cloning.
+
+## Key Learnings
+
+- Strategic isolation beats destructive cleaning: returns and cancellations carry business signal.
+- Managing the same logic in Pandas (eager) and PySpark (lazy, immutable DataFrames).
+
+## Planned Improvements
+
+- Fix SQL schema (DECIMAL for money, primary key, indexes, no dot in table name)
+- Star schema (fact and dimension tables)
+- Convert notebooks into a modular `src/` package with config and logging
+- Unit tests and CI with GitHub Actions
+- Power BI dashboard on the cleaned data
+- Azure-based version (ADLS, Data Factory, Databricks)
+
+## License
+
+MIT
