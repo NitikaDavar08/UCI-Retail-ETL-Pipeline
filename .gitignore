@@ -1,8 +1,5 @@
-# Data files (repo mein nahi rakhte)
-data/*
-!data/README.md
-*.csv
-*.xlsx
+# Raw data (UCI website se download karo)
+data/Online*
 
 # Database dumps with data
 Schema_and_data.sql
